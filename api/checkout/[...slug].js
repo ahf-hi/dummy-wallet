@@ -7,8 +7,8 @@ export default async function handler(req, res) {
         const orderId = req.body.order?.id || "";
         const redirectUrl = req.body.redirectUrl;
 
-        // REPLACE "PAGUAT" with "DUMMY"
-        const checkoutId = orderId.replace('PAGUAT', 'DUMMY');
+        // REPLACE "DMYPAG" with "DUMMY"
+        const checkoutId = orderId.replace('DMYPAG', 'DUMMY');
 
         const targetUrl = new URL(redirectUrl);
         targetUrl.searchParams.append('checkoutId', checkoutId);
