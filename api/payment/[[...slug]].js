@@ -33,7 +33,6 @@ export default async function handler(req, res) {
             const checkoutId = req.query.checkoutId || "";
             const currentOrderId = checkoutId.replace('DUMMY', 'DMYPAG');
 
-            // --- TRIGGER FINAL CALLBACK ---
             const callbackBody = {
                 "item": {
                     "store": {
@@ -84,14 +83,18 @@ export default async function handler(req, res) {
                 "code": "SUCCESS"
             };
 
-            // Fire and forget callback
-            fetch("http://devlinkv2.paydee.co/mpigwv2/revenue-monster/payment-status/redirect", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(callbackBody)
-            }).catch(() => {});
+            // CRITICAL CHANGE: We use 'await' here to force Vercel to stay awake 
+            // until the callback is successfully delivered.
+            try {
+                await fetch("http://devlinkv2.paydee.co/mpigwv2/revenue-monster/payment-status/redirect", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(callbackBody)
+                });
+            } catch (e) {
+                console.error("Callback delivery failed:", e.message);
+            }
 
-            // Return original response
             return res.status(200).json({
                 "item": {
                     "type": "URL",
