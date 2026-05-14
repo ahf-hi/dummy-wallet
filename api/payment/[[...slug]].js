@@ -17,7 +17,7 @@ export default async function handler(req, res) {
         return res.status(200).json({
             "item": {
                 "checkoutId": checkoutId,
-                "url": `https://dummy-wallet.vercel.app/api/payment/online?checkoutId=${checkoutId}`
+                "url": `https://dummy-wallet.vercel.app/api/checkout?checkoutId=${checkoutId}`
             },
             "code": "SUCCESS"
         });
