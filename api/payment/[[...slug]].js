@@ -22,7 +22,7 @@ export default async function handler(req, res) {
         
         // --- PATH A: online ---
         if (path === 'online') {
-            const orderId = (req.body?.order?.id) || "PAGUAT" + Date.now();
+            const orderId = (req.body?.order?.id) || "PAGUAT";
             const checkoutId = orderId.replace('PAGUAT', 'DUMMY');
 
             return res.status(200).json({
