@@ -24,7 +24,7 @@ export default async function handler(req, res) {
         return res.status(200).json({
             "item": {
                 "type": "URL",
-                "url": "https://m-sd.tngdigital.com.my/s/cashier..."
+                "url": "https://m-sd.tngdigital.com.my/s/cashier/index.html?bizNo=20260513111212800110171792505137973\u0026timestamp=1778663675918\u0026merchantId=217120000000025910811\u0026sign=jYnBmeOOLRkUDWmhQq4%252B1V0yntKuDpcmvb%252Fx0qtM%252Fx2XCBxX6unuN%252FxRmwwakEX55IOF1dUvn0c5jEyWsaV1icsbvvesXhXNOx4uq%252FNa2wiXKuv3vrjBAPMbwIekjtwiZB77sSHpv7uRLdZgHk5yny%252BS8MKNQqrEAJuIb1gq5%252BeVd0e2OTf2kbuN%252FruFFSJQbD0AphXyCLbnZjR4bK0k2ah7Mjz8eHn%252FQTCa4H9%252FExu%252FTYCfEYA2NguTiGt1ta0CzeyQC%252B64d3qjrNp7Tp2%252BdmXSoOepVKkRsg9IjnkZ5xhkPNb2nIpDO7fjfpWWMG5Fl07NIY%252FQORshtIsXw4N0gQ%253D%253D\u0026forceInstallVer2=true"
             },
             "code": "SUCCESS"
         });
