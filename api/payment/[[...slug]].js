@@ -1,20 +1,20 @@
 export default async function handler(req, res) {
-    // 1. Get the slug (path)
+    // 1. Get and clean the slug
     const { slug } = req.query;
     let path = Array.isArray(slug) ? slug.join('/') : (slug || '');
 
-    // 2. Clean the path (ensures "online/checkout&signType" becomes "online/checkout")
+    // 2. Detect Sign Request (if signType is in URL or path is "sign")
+    const isSignRequest = req.url.includes('signType') || path.includes('sign');
+
     if (path.includes('&')) {
         path = path.split('&')[0];
     }
 
-    // --- STEP 0: Handshake / Sign Request (Original & New Endpoint) ---
-    // Added 'online/checkout' here because your app uses it as a sign request
-    if (path === '' || path === 'sign' || path === 'online/checkout') {
+    // --- STEP 0: Handshake / Sign Request ---
+    if (isSignRequest || path === '' || path === 'sign') {
         
-        // Check if this is the specific TNG-style sign request
-        // We can detect this by checking for signType or the specific URL requirement
-        if (req.query.signType || path === 'online/checkout') {
+        // Handle TNG-style signing for "online" or "online/checkout" paths
+        if (path.includes('online')) {
             return res.status(200).json({
                 "item": {
                     "type": "URL",
@@ -24,9 +24,9 @@ export default async function handler(req, res) {
             });
         }
 
-        // Default Step 0 Handshake
-        const orderId = req.body.order?.id || "DMYPAG" + Date.now();
-        const checkoutId = orderId.replace('DMYPAG', 'DUMMY');
+        // Generic Handshake using ORDID
+        const orderId = req.body.order?.id || "ORDID" + Date.now();
+        const checkoutId = orderId.replace('ORDID', 'DUMMY');
 
         return res.status(200).json({
             "item": {
@@ -37,8 +37,9 @@ export default async function handler(req, res) {
         });
     }
 
-    // --- STEP 1: Redirect Request (/api/payment/online) ---
+    // --- STEP 1: Redirect Request ---
     if (path === 'online') {
+        // Receives checkoutId and simply passes it forward
         const checkoutId = req.body.order?.id || req.query.checkoutId || "";
         const redirectUrl = req.body.redirectUrl;
 
@@ -50,6 +51,30 @@ export default async function handler(req, res) {
         }
 
         return res.status(200).json({ "code": "SUCCESS", "checkoutId": checkoutId });
+    }
+
+    // --- STEP 2: Final Confirmation ---
+    if (path === 'online/checkout') {
+        const receivedId = req.body.checkoutId || "";
+        // Reverts DUMMY back to ORDID for the final response
+        const originalOrderId = receivedId.replace('DUMMY', 'ORDID');
+
+        return res.status(200).json({
+            "item": {
+                "store": { "id": "1767688690703368016", "name": "Mock Provider", "status": "ACTIVE" },
+                "referenceId": "REF_" + Date.now(),
+                "transactionId": "TXN_" + Date.now(),
+                "order": {
+                    "id": originalOrderId,
+                    "title": "Payment to merchant",
+                    "amount": 100
+                },
+                "currencyType": "MYR",
+                "status": "SUCCESS",
+                "transactionAt": new Date().toISOString()
+            },
+            "code": "SUCCESS"
+        });
     }
 
     return res.status(404).json({ error: "Path not recognized", path });
