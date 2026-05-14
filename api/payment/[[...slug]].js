@@ -1,15 +1,26 @@
 export default async function handler(req, res) {
     try {
-        // 1. Get the path from the slug (e.g., "online" or "online/checkout")
+        // 1. Get the path from slug OR manually parse from URL if slug is empty
         const { slug } = req.query;
         let path = Array.isArray(slug) ? slug.join('/') : (slug || '');
 
-        // 2. Clean path of query parameters if they got merged into the slug string
+        // If path is empty, manually extract it from the URL string
+        if (!path) {
+            const urlParts = req.url.split('?')[0].split('&')[0].split('/');
+            // This looks for the parts after /api/payment/
+            const paymentIndex = urlParts.indexOf('payment');
+            if (paymentIndex !== -1) {
+                path = urlParts.slice(paymentIndex + 1).join('/');
+            }
+        }
+
+        // 2. Clean any remaining parameter noise (like &signtype)
         if (path.includes('&')) path = path.split('&')[0];
+        if (path.includes('?')) path = path.split('?')[0];
 
         // 3. Logic based on the specific path
         
-        // --- PATH A: /api/payment/online&signtype ---
+        // --- PATH A: online ---
         if (path === 'online') {
             const orderId = (req.body?.order?.id) || "PAGUAT" + Date.now();
             const checkoutId = orderId.replace('PAGUAT', 'DUMMY');
@@ -23,7 +34,7 @@ export default async function handler(req, res) {
             });
         }
 
-        // --- PATH B: /api/payment/online/checkout&signtype ---
+        // --- PATH B: online/checkout ---
         if (path === 'online/checkout') {
             return res.status(200).json({
                 "item": {
@@ -34,8 +45,12 @@ export default async function handler(req, res) {
             });
         }
 
-        // Catch-all for any other path
-        return res.status(404).json({ "error": "Not Found", "path": path });
+        // Final Debug fallback if it still fails
+        return res.status(404).json({ 
+            "error": "Not Found", 
+            "path": path, 
+            "rawUrl": req.url 
+        });
 
     } catch (err) {
         return res.status(500).json({ "error": "Server Error", "message": err.message });
