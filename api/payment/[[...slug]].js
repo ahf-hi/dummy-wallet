@@ -86,7 +86,7 @@ export default async function handler(req, res) {
             // CRITICAL CHANGE: We use 'await' here to force Vercel to stay awake 
             // until the callback is successfully delivered.
             try {
-                await fetch("http://devlinkv2.paydee.co/mpigwv2/revenue-monster/payment-status/redirect", {
+                await fetch("https://devlinkv2.paydee.co/mpigwv2/revenue-monster/payment-status/redirect", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(callbackBody)
