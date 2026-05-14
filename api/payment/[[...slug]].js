@@ -25,8 +25,8 @@ export default async function handler(req, res) {
 
     // --- STEP 0: Handshake / Sign Request (Maintain Original) ---
     if (path === '' || path === 'sign') {
-        const orderId = req.body.order?.id || "ORDID" + Date.now();
-        const checkoutId = orderId.replace('ORDID', 'DUMMY');
+        const orderId = req.body.order?.id || "DMYPAG" + Date.now();
+        const checkoutId = orderId.replace('DMYPAG', 'DUMMY');
 
         return res.status(200).json({
             "item": {
@@ -42,8 +42,8 @@ export default async function handler(req, res) {
         const orderId = req.body.order?.id || req.query.checkoutId || "";
         const redirectUrl = req.body.redirectUrl;
 
-        const checkoutId = orderId.includes('ORDID') 
-            ? orderId.replace('ORDID', 'DUMMY') 
+        const checkoutId = orderId.includes('DMYPAG') 
+            ? orderId.replace('DMYPAG', 'DUMMY') 
             : orderId;
 
         if (redirectUrl) {
@@ -60,7 +60,7 @@ export default async function handler(req, res) {
     // Only reached if signType is NOT in the URL
     if (path === 'online/checkout') {
         const receivedId = req.body.checkoutId || "";
-        const originalOrderId = receivedId.replace('DUMMY', 'ORDID');
+        const originalOrderId = receivedId.replace('DUMMY', 'DMYPAG');
 
         return res.status(200).json({
             "item": {
