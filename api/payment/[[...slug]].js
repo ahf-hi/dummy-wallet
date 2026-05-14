@@ -22,8 +22,8 @@ export default async function handler(req, res) {
         
         // --- PATH A: online ---
         if (path === 'online') {
-            const orderId = (req.body?.order?.id) || "PAGUAT";
-            const checkoutId = orderId.replace('PAGUAT', 'DUMMY');
+            const orderId = (req.body?.order?.id) || "DMYPAG";
+            const checkoutId = orderId.replace('DMYPAG', 'DUMMY');
 
             return res.status(200).json({
                 "item": {
