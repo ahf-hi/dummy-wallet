@@ -1,29 +1,36 @@
 export default async function handler(req, res) {
-    // 1. Get the slug (path)
     const { slug } = req.query;
     let path = Array.isArray(slug) ? slug.join('/') : (slug || '');
 
-    // 2. Detect if this is a Sign Request (via URL string or query)
-    const isSignRequest = req.url.includes('signType');
+    // --- DIAGNOSTIC CHECK ---
+    // If you see this JSON response, it means the script IS reaching your code.
+    // If you still see a generic "404 Page Not Found", the issue is your filename.
+    if (req.query.debug === 'true') {
+        return res.status(200).json({
+            message: "Script reached!",
+            detectedPath: path,
+            fullUrl: req.url,
+            query: req.query
+        });
+    }
 
-    // 3. Clean the path for logic matching
+    // 1. Clean path
     if (path.includes('&')) {
         path = path.split('&')[0];
     }
 
-    // --- NEW HANDLER: TNG Sign Request ---
-    // If signType is present, handle it regardless of path (online or online/checkout)
-    if (isSignRequest) {
+    // 2. Intercept signType (Handshake)
+    if (req.url.includes('signType')) {
         return res.status(200).json({
             "item": {
                 "type": "URL",
-                "url": "https://m-sd.tngdigital.com.my/s/cashier/index.html?bizNo=20260513111212800110171792505137973&timestamp=1778663675918&merchantId=217120000000025910811&sign=jYnBmeOOLRkUDWmhQq4%2B1V0yntKuDpcmvb%2Fx0qtM%2Fx2XCBxX6unuN%2FxRmwwakEX55IOF1dUvn0c5jEyWsaV1icsbvvesXhXNOx4uq%2FNa2wiXKuv3vrjBAPMbwIekjtwiZB77sSHpv7uRLdZgHk5yny%2BS8MKNQqrEAJuIb1gq5%2BeVd0e2OTf2kbuN%2FruFFSJQbD0AphXyCLbnZjR4bK0k2ah7Mjz8eHn%2FQTCa4H9%2FExu%2FTYCfEYA2NguTiGt1ta0CzeyQC%2B64d3qjrNp7Tp2%2BdmXSoOepVKkRsg9IjnkZ5xhkPNb2nIpDO7fjfpWWMG5Fl07NIY%2FQORshtIsXw4N0gQ%3D%3D&forceInstallVer2=true"
+                "url": "https://m-sd.tngdigital.com.my/s/cashier..."
             },
             "code": "SUCCESS"
         });
     }
 
-    // --- STEP 0: Handshake / Sign Request (Maintain Original) ---
+    // --- STEP 0: Handshake / Sign Request ---
     if (path === '' || path === 'sign') {
         const orderId = req.body.order?.id || "DMYPAG" + Date.now();
         const checkoutId = orderId.replace('DMYPAG', 'DUMMY');
@@ -37,7 +44,7 @@ export default async function handler(req, res) {
         });
     }
 
-    // --- STEP 1: Redirect Request (/api/payment/online) ---
+   // --- STEP 1: Redirect Request (/api/payment/online) ---
     if (path === 'online') {
         const orderId = req.body.order?.id || req.query.checkoutId || "";
         const redirectUrl = req.body.redirectUrl;
@@ -57,9 +64,8 @@ export default async function handler(req, res) {
     }
 
     // --- STEP 2: Final Confirmation (/api/payment/online/checkout) ---
-    // Only reached if signType is NOT in the URL
     if (path === 'online/checkout') {
-        const receivedId = req.body.checkoutId || "";
+       const receivedId = req.body.checkoutId || "";
         const originalOrderId = receivedId.replace('DUMMY', 'DMYPAG');
 
         return res.status(200).json({
@@ -80,5 +86,10 @@ export default async function handler(req, res) {
         });
     }
 
-    return res.status(404).json({ error: "Path not recognized", path });
+    // If it hits here, it's a logic mismatch
+    return res.status(404).json({ 
+        error: "Logic Fallthrough", 
+        matchedPath: path,
+        suggestion: "Check if path equals 'online/checkout' exactly."
+    });
 }
