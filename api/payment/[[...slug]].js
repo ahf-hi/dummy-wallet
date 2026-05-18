@@ -22,7 +22,8 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 "item": {
                     "checkoutId": checkoutId,
-                    "url": `https://dummy-wallet.vercel.app/api/payment/online/checkout?checkoutId=${checkoutId}`
+                    // FIX: Pass both checkoutId AND the original orderId in the URL query string
+                    "url": `https://dummy-wallet.vercel.app/api/payment/online/checkout?checkoutId=${checkoutId}&originalOrderId=${orderId}`
                 },
                 "code": "SUCCESS"
             });
@@ -30,17 +31,21 @@ export default async function handler(req, res) {
 
         // --- PATH B: online/checkout ---
         if (path === 'online/checkout') {
-            // FALLBACK FIX: If req.query.checkoutId is empty, parse it manually from req.url
+            // Parse the original orderId directly from the URL query strings
+            let originalOrderId = req.query.originalOrderId || "";
             let checkoutId = req.query.checkoutId || "";
-            if (!checkoutId && req.url.includes('checkoutId=')) {
+
+            // Fallback manual URL parser if Next.js query parsing fails
+            if ((!originalOrderId || !checkoutId) && req.url.includes('?')) {
                 const urlParams = new URL(req.url, `https://${req.headers.host}`);
-                checkoutId = urlParams.searchParams.get('checkoutId') || "";
+                checkoutId = checkoutId || urlParams.searchParams.get('checkoutId') || "";
+                originalOrderId = originalOrderId || urlParams.searchParams.get('originalOrderId') || "";
             }
 
-            // Ensure we have a default value to prevent completely empty strings
-            const currentOrderId = checkoutId ? checkoutId.replace('DUMMY', 'DMYPAG') : "DMYPAG" + Date.now();
+            // Fallback recovery: reconstruct from checkoutId if somehow missing, or generate as absolute last resort
+            const currentOrderId = originalOrderId || (checkoutId ? checkoutId.replace('DUMMY', 'DMYPAG') : "DMYPAG" + Date.now());
 
-            // 1. Construct the GET redirect URL with dynamic orderId and transId
+            // 1. Construct the GET redirect URL with the persistent original orderId
             const redirectUrl = `https://devlinkv2.paydee.co/mpigwv2/revenue-monster/payment-status/redirect?merchantId=000000000000006&orderId=${currentOrderId}&status=SUCCESS&transId=${currentOrderId}`;
 
             try {
@@ -66,7 +71,7 @@ export default async function handler(req, res) {
                     order: {
                         amount: 100,
                         detail: "",
-                        id: currentOrderId, // Guaranteed to have a value now
+                        id: currentOrderId, // This now accurately matches your original path A ID
                         title: "Payment to merchant"
                     },
                     payee: {
