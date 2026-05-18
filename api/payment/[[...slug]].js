@@ -33,7 +33,7 @@ export default async function handler(req, res) {
             const checkoutId = req.query.checkoutId || "";
             const currentOrderId = checkoutId.replace('DUMMY', 'DMYPAG');
 
-            // Construct the GET redirect URL with dynamic orderId and transId
+            // 1. Construct the GET redirect URL with dynamic orderId and transId
             const redirectUrl = `https://devlinkv2.paydee.co/mpigwv2/revenue-monster/payment-status/redirect?merchantId=000000000000006&orderId=${currentOrderId}&status=SUCCESS&transId=${currentOrderId}`;
 
             try {
@@ -43,6 +43,70 @@ export default async function handler(req, res) {
                 });
             } catch (e) {
                 console.error("Redirect notification failed:", e.message);
+            }
+
+            // 2. Send POST Webhook Callback Notification
+            const webhookUrl = "https://devlinkv2.paydee.co/webhookv2/revenue-monster/payment-status/notify/000000000000006";
+            
+            // Generate valid ISO timestamps for the payload
+            const nowIso = new Date().toISOString(); 
+
+            const webhookPayload = {
+                eventType: "PAYMENT_WEB_ONLINE",
+                data: {
+                    balanceAmount: 100,
+                    createdAt: nowIso,
+                    currencyType: "MYR",
+                    method: "TNG",
+                    order: {
+                        amount: 100,
+                        detail: "",
+                        id: currentOrderId, // Dynamically inject current order ID
+                        title: "Payment to merchant"
+                    },
+                    payee: {
+                        userId: 1000009067743988
+                    },
+                    platform: "OPEN_API",
+                    referenceId: "20260518111212800110171244405345740",
+                    region: "MALAYSIA",
+                    status: "SUCCESS",
+                    store: {
+                        addressLine1: "",
+                        addressLine2: "",
+                        city: "",
+                        country: "",
+                        countryCode: "",
+                        createdAt: "2026-01-06T08:38:10Z",
+                        geoLocation: { latitude: 0, longitude: 0 },
+                        id: 1767688690703368016,
+                        imageUrl: "https://storage.googleapis.com/rm-prod-asset/img/store.png",
+                        name: "paydee merchant 1",
+                        phoneNumber: "",
+                        postCode: "",
+                        state: "",
+                        status: "ACTIVE",
+                        updatedAt: "2026-01-06T08:38:10Z"
+                    },
+                    terminalId: "",
+                    transactionAt: nowIso,
+                    transactionId: "260518030355300426755550",
+                    type: "WEB_PAYMENT",
+                    updatedAt: nowIso,
+                    voucher: null
+                }
+            };
+
+            try {
+                await fetch(webhookUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(webhookPayload)
+                });
+            } catch (e) {
+                console.error("Webhook notification failed:", e.message);
             }
 
             // Return the specific JSON response requested
