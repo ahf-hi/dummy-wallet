@@ -34,7 +34,7 @@ export default async function handler(req, res) {
             const currentOrderId = checkoutId.replace('DUMMY', 'DMYPAG');
 
             // 1. Construct the GET redirect URL with dynamic orderId and transId
-            const redirectUrl = `https://devlinkv2.paydee.co/mpigwv2/revenue-monster/payment-status/redirect?merchantId=000000000000006&orderId=${currentOrderId}&status=SUCCESS&transId=${currentOrderId}`;
+            const redirectUrl = `https://devlinkv2.paydee.co/mpigwv2/revenue-monster/payment-status/redirect?merchantId=SYSSPC000000001&orderId=${currentOrderId}&status=SUCCESS&transId=${currentOrderId}`;
 
             try {
                 // Sent GET request to the redirect URL
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
             }
 
             // 2. Send POST Webhook Callback Notification
-            const webhookUrl = "https://devlinkv2.paydee.co/webhookv2/revenue-monster/payment-status/notify/000000000000006";
+            const webhookUrl = "https://devlinkv2.paydee.co/webhookv2/revenue-monster/payment-status/notify/SYSSPC000000001";
             
             // Generate valid ISO timestamps for the payload
             const nowIso = new Date().toISOString(); 
