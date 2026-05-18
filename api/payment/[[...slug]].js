@@ -22,8 +22,7 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 "item": {
                     "checkoutId": checkoutId,
-                    // FIX: Pass both checkoutId AND the original orderId in the URL query string
-                    "url": `https://dummy-wallet.vercel.app/api/payment/online/checkout?checkoutId=${checkoutId}&originalOrderId=${orderId}`
+                    "url": `https://dummy-wallet.vercel.app/api/payment/online/checkout?checkoutId=${checkoutId}`
                 },
                 "code": "SUCCESS"
             });
@@ -31,21 +30,26 @@ export default async function handler(req, res) {
 
         // --- PATH B: online/checkout ---
         if (path === 'online/checkout') {
-            // Parse the original orderId directly from the URL query strings
-            let originalOrderId = req.query.originalOrderId || "";
             let checkoutId = req.query.checkoutId || "";
 
-            // Fallback manual URL parser if Next.js query parsing fails
-            if ((!originalOrderId || !checkoutId) && req.url.includes('?')) {
+            // Fallback manual URL parsing if req.query is failing
+            if (!checkoutId && req.url.includes('checkoutId=')) {
                 const urlParams = new URL(req.url, `https://${req.headers.host}`);
-                checkoutId = checkoutId || urlParams.searchParams.get('checkoutId') || "";
-                originalOrderId = originalOrderId || urlParams.searchParams.get('originalOrderId') || "";
+                checkoutId = urlParams.searchParams.get('checkoutId') || "";
             }
 
-            // Fallback recovery: reconstruct from checkoutId if somehow missing, or generate as absolute last resort
-            const currentOrderId = originalOrderId || (checkoutId ? checkoutId.replace('DUMMY', 'DMYPAG') : "DMYPAG" + Date.now());
+            let currentOrderId = "";
 
-            // 1. Construct the GET redirect URL with the persistent original orderId
+            // RECOVERY STRATEGY: Reconstruct the exact original ID from the checkoutId string
+            if (checkoutId && checkoutId.includes('DUMMY')) {
+                currentOrderId = checkoutId.replace('DUMMY', 'DMYPAG');
+            } else {
+                // Absolute safety fallback: Extract numbers if the prefix was modified by the gateway
+                const numbersOnly = checkoutId.replace(/\D/g, "");
+                currentOrderId = numbersOnly ? "DMYPAG" + numbersOnly : "DMYPAG" + Date.now();
+            }
+
+            // 1. Construct the GET redirect URL
             const redirectUrl = `https://devlinkv2.paydee.co/mpigwv2/revenue-monster/payment-status/redirect?merchantId=000000000000006&orderId=${currentOrderId}&status=SUCCESS&transId=${currentOrderId}`;
 
             try {
@@ -71,7 +75,7 @@ export default async function handler(req, res) {
                     order: {
                         amount: 100,
                         detail: "",
-                        id: currentOrderId, // This now accurately matches your original path A ID
+                        id: currentOrderId, // Derived directly from the checkoutId string
                         title: "Payment to merchant"
                     },
                     payee: {
